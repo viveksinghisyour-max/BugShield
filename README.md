@@ -61,6 +61,8 @@ BugShield is a full-stack cybersecurity mini-project that looks and feels like a
 
 ```text
 BugShield/
+├── .vscode/
+│   └── settings.json         # Suppresses false-positive Tailwind CSS warnings
 ├── backend/                  # Python FastAPI backend
 │   ├── app.py                # Application entry point
 │   ├── config.py             # Settings (env vars)
@@ -78,6 +80,7 @@ BugShield/
 └── frontend/                 # React + Vite + TailwindCSS
     ├── index.html
     ├── tailwind.config.js
+    ├── vite.config.js        # Dev server locked to port 5173 (strictPort)
     └── src/
         ├── App.jsx           # Routes
         ├── styles.css        # Design system + animations
