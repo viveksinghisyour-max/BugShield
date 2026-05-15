@@ -223,26 +223,6 @@ The AI scanner engine detects the following vulnerability categories:
 
 ---
 
-## ⚙️ Environment Variables
-
-### Backend (`.env`)
-
-```env
-BUGSHIELD_JWT_SECRET=your-super-secret-key-here
-BUGSHIELD_DATABASE_PATH=./database/bugshield.db
-BUGSHIELD_UPLOAD_DIR=./storage/uploads
-BUGSHIELD_REPORTS_DIR=./reports
-BUGSHIELD_FRONTEND_ORIGIN=http://localhost:5173
-```
-
-### Frontend (`.env`)
-
-```env
-VITE_API_URL=http://localhost:8000
-```
-
----
-
 ## 🛡️ Production Notes
 
 - Replace `BUGSHIELD_JWT_SECRET` with a cryptographically random 64-character secret
