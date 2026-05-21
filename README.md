@@ -168,6 +168,30 @@ npm run dev
 
 ---
 
+## 🔒 Role-Based Access & Admin Configuration
+
+BugShield implements secure Role-Based Access Control (RBAC) supporting three roles:
+*   **Admin**: Full system access, including managing other users, viewing all user activity logs, deleting projects, running scans, and viewing all system assets.
+*   **Developer**: Standard access (uploading code, running scans, viewing their own projects).
+*   **Viewer**: Read-only access (viewing their own assigned projects and scans).
+
+### Admin Account Assignment (Environment Configured)
+
+To secure the registration flow against privilege escalation vulnerabilities, registrations strictly default to the **`developer`** role. 
+
+To claim your administrator/owner account, configure your admin email address using the `BUGSHIELD_ADMIN_EMAIL` environment variable:
+
+1. **Configure the environment variable** (in your `.env` file or host platform environment variables like Render):
+   ```bash
+   BUGSHIELD_ADMIN_EMAIL=your-real-email@domain.com
+   ```
+2. **Register the account**:
+   Go to the `/register` page and sign up with that exact email address. The backend will automatically recognize it and assign the **`admin`** role.
+3. **Manage Others**:
+   As an Admin, you can access the **User Management** screen (`/users`) in the dashboard to promote other registered users or change their roles as needed.
+
+---
+
 ## 🔌 API Endpoints
 
 | Method | Endpoint | Description |
