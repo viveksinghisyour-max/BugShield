@@ -1,23 +1,8 @@
+import { getToken, setSession, clearSession, getUser } from "../utils/auth.js";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-export function getToken() {
-  return localStorage.getItem("bugshield_token");
-}
-
-export function setSession(token, user) {
-  localStorage.setItem("bugshield_token", token);
-  localStorage.setItem("bugshield_user", JSON.stringify(user));
-}
-
-export function clearSession() {
-  localStorage.removeItem("bugshield_token");
-  localStorage.removeItem("bugshield_user");
-}
-
-export function getUser() {
-  const raw = localStorage.getItem("bugshield_user");
-  return raw ? JSON.parse(raw) : null;
-}
+export { getToken, setSession, clearSession, getUser };
 
 export async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };

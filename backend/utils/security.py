@@ -52,6 +52,7 @@ def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bear
         user = row_to_dict(db.execute("SELECT id, name, email, role, created_at FROM users WHERE id = ?", (user_id,)).fetchone())
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    user["role"] = str(user["role"]).lower()
     return user
 
 

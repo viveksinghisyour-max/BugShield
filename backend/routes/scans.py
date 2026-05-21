@@ -4,6 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from database import get_db, json_dump, row_to_dict, rows_to_dicts, utc_now
 from scanner.engine import scan_project
+from scanner.ai_analyzer import enrich_findings
 from utils.security import current_user, require_permission
 
 
@@ -107,13 +108,19 @@ def _run_scan(scan_id: int, project: dict) -> None:
 
     try:
         result = scan_project(project["storage_path"], update_progress)
+        
+        # Phase 1: AI Vulnerability Explanation Engine
+        # Enrich the findings with AI explanations, fixes, and secure examples
+        enriched_findings = enrich_findings(result["findings"])
+        result["summary"]["findings_count"] = len(enriched_findings)
+        
         with get_db() as db:
             db.execute(
                 "UPDATE scans SET security_score = ?, status = ?, summary_json = ? WHERE id = ?",
                 (result["security_score"], "completed", json_dump(result["summary"]), scan_id),
             )
             db.execute("UPDATE projects SET status = ? WHERE id = ?", ("completed", project["id"]))
-            for finding in result["findings"]:
+            for finding in enriched_findings:
                 db.execute(
                     """
                     INSERT INTO vulnerabilities

@@ -3,8 +3,9 @@ from pydantic import BaseModel
 
 from database import get_db, row_to_dict, utc_now
 from utils.security import create_access_token, current_user, hash_password, verify_password
-from utils.validation import clean_email, validate_password, validate_role
+from utils.validation import clean_email, clean_email_strict, validate_password, validate_role
 from fastapi import Depends
+import re
 
 
 router = APIRouter(tags=["auth"])
@@ -24,12 +25,12 @@ class LoginRequest(BaseModel):
 
 @router.post("/register")
 def register(payload: RegisterRequest):
-    email = clean_email(payload.email)
+    email = clean_email_strict(payload.email)
     validate_password(payload.password)
     role = validate_role(payload.role)
     name = payload.name.strip()
-    if len(name) < 2:
-        raise HTTPException(status_code=422, detail="Name is required")
+    if not re.match(r"^[a-zA-Z\s]{2,50}$", name):
+        raise HTTPException(status_code=422, detail="Name must be 2-50 characters and contain only letters and spaces")
     with get_db() as db:
         exists = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
         if exists:
@@ -50,6 +51,7 @@ def login(payload: LoginRequest):
         user = row_to_dict(db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone())
     if not user or not verify_password(payload.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
+    user["role"] = str(user["role"]).lower()
     token = create_access_token({"sub": str(user["id"]), "role": user["role"]})
     safe_user = {key: user[key] for key in ("id", "name", "email", "role", "created_at")}
     return {"token": token, "user": safe_user}

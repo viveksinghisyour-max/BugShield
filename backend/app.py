@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from database import init_db
-from routes import auth, projects, reports, scans, users
+from routes import auth, projects, reports, scans, users, ai_chat
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -38,3 +38,4 @@ app.include_router(projects.router)
 app.include_router(scans.router)
 app.include_router(reports.router)
 app.include_router(users.router)
+app.include_router(ai_chat.router)
