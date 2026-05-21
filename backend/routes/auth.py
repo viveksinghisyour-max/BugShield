@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from config import settings
 from database import get_db, row_to_dict, utc_now
 from utils.security import create_access_token, current_user, hash_password, verify_password
-from utils.validation import clean_email, clean_email_strict, validate_password, validate_role
+from utils.validation import clean_email, clean_email_strict, validate_password
 from fastapi import Depends
 import re
 
@@ -27,7 +28,6 @@ class LoginRequest(BaseModel):
 def register(payload: RegisterRequest):
     email = clean_email_strict(payload.email)
     validate_password(payload.password)
-    role = validate_role(payload.role)
     name = payload.name.strip()
     if not re.match(r"^[a-zA-Z\s]{2,50}$", name):
         raise HTTPException(status_code=422, detail="Name must be 2-50 characters and contain only letters and spaces")
@@ -35,6 +35,14 @@ def register(payload: RegisterRequest):
         exists = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
         if exists:
             raise HTTPException(status_code=409, detail="Email already registered")
+        
+        # Automatically assign admin role if the registered email matches the configured admin email.
+        # Otherwise, force the role to developer to prevent unauthorized privilege escalation.
+        if email.lower() == settings.admin_email.lower():
+            role = "admin"
+        else:
+            role = "developer"
+        
         cursor = db.execute(
             "INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, ?)",
             (name, email, hash_password(payload.password), role, utc_now()),
