@@ -9,13 +9,13 @@ def _get_client() -> OpenAI:
     return OpenAI(
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         api_key=api_key,
-        timeout=5.0,
+        timeout=8.0,
     )
 
 
 def analyze_vulnerability(finding: dict) -> dict:
     """
-    Calls the Gemini model to analyze a vulnerability finding
+    Calls Gemini 2.0 Flash to analyze a vulnerability finding
     and generate an explanation, fix, and secure code example.
     """
     if not settings.gemini_api_key or settings.gemini_api_key == "your_gemini_api_key_here":
@@ -55,7 +55,7 @@ Format:
     try:
         client = _get_client()
         completion = client.chat.completions.create(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
             top_p=0.7,
@@ -65,7 +65,6 @@ Format:
 
         response_text = completion.choices[0].message.content
 
-        # Clean up JSON formatting if the model wraps it in markdown blocks
         if response_text.startswith("```json"):
             response_text = response_text[7:]
         if response_text.startswith("```"):
@@ -86,11 +85,11 @@ Format:
 
 def chat_with_ai(messages: list, system_context: str = "") -> str:
     """
-    Handles a conversation with the BugShield AI.
+    Handles a conversation with BugShield AI using Gemini 2.0 Flash.
     Enforces a strict cybersecurity persona.
     """
     if not settings.gemini_api_key or settings.gemini_api_key == "your_gemini_api_key_here":
-        return "BugShield AI key is not set. Please add GEMINI_API_KEY to environment variables in your server dashboard."
+        return "BugShield AI key is not set. Please get a free Gemini API key from https://aistudio.google.com/app/apikey and add GEMINI_API_KEY to your environment variables."
 
     system_prompt = (
         "You are BugShield AI, a highly specialized cybersecurity assistant. "
@@ -104,7 +103,7 @@ def chat_with_ai(messages: list, system_context: str = "") -> str:
     try:
         client = _get_client()
         completion = client.chat.completions.create(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             messages=api_messages,
             temperature=0.3,
             top_p=0.8,
@@ -113,5 +112,10 @@ def chat_with_ai(messages: list, system_context: str = "") -> str:
         )
         return completion.choices[0].message.content
     except Exception as e:
-        print(f"AI Chat Error: {e}")
-        return f"Unable to reach AI network: {e}"
+        err_str = str(e)
+        print(f"AI Chat Error: {err_str}")
+        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "Quota exceeded" in err_str:
+            return "The Gemini API rate limit / quota was reached for this key. Please wait a minute or set a new free Gemini API key from https://aistudio.google.com/app/apikey in your environment settings."
+        if "401" in err_str or "403" in err_str or "API_KEY_INVALID" in err_str:
+            return "The configured Gemini API key is invalid. Please get a free API key starting with 'AIzaSy...' from https://aistudio.google.com/app/apikey."
+        return f"Unable to reach BugShield AI network: {err_str}"
