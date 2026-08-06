@@ -3,14 +3,14 @@ from openai import OpenAI
 from config import settings
 
 client = OpenAI(
-  base_url="https://integrate.api.nvidia.com/v1",
-  api_key=settings.nvidia_api_key,
-  timeout=4.0
+  base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+  api_key=settings.gemini_api_key,
+  timeout=5.0
 )
 
 def analyze_vulnerability(finding: dict) -> dict:
     """
-    Calls the Nvidia Llama model to analyze a vulnerability finding
+    Calls the Gemini model to analyze a vulnerability finding
     and generate an explanation, fix, and secure code example.
     """
     prompt = f"""You are a cybersecurity expert.
@@ -46,7 +46,7 @@ Format:
 """
     try:
         completion = client.chat.completions.create(
-            model="meta/llama-3.3-70b-instruct",
+            model="gemini-1.5-flash",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
             top_p=0.7,
@@ -91,7 +91,7 @@ def chat_with_ai(messages: list, system_context: str = "") -> str:
 
     try:
         completion = client.chat.completions.create(
-            model="meta/llama-3.3-70b-instruct",
+            model="gemini-1.5-flash",
             messages=api_messages,
             temperature=0.3,
             top_p=0.8,
