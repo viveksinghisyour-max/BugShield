@@ -38,19 +38,40 @@ async def upload_project(
 
 @router.get("/projects")
 def list_projects(user=Depends(current_user)):
-    query = """
-        SELECT p.*, COALESCE(s.security_score, 0) AS security_score
-        FROM projects p
-        LEFT JOIN scans s ON s.id = (
-            SELECT id FROM scans WHERE project_id = p.id ORDER BY scan_date DESC LIMIT 1
-        )
-    """
-    params: tuple = ()
-    if user["role"] != "admin":
-        query += " WHERE p.user_id = ?"
-        params = (user["id"],)
-    query += " ORDER BY p.upload_date DESC"
     with get_db() as db:
+        # Sync projects whose scans already finished in scans table
+        db.execute("""
+            UPDATE projects
+            SET status = (
+                SELECT s.status FROM scans s WHERE s.project_id = projects.id ORDER BY s.scan_date DESC LIMIT 1
+            )
+            WHERE status = 'scanning'
+            AND EXISTS (
+                SELECT 1 FROM scans s WHERE s.project_id = projects.id AND s.status IN ('completed', 'failed')
+            )
+        """)
+        # If project has been stuck in scanning without any completed scan for > 2 minutes, fallback to uploaded
+        db.execute("""
+            UPDATE projects
+            SET status = 'uploaded'
+            WHERE status = 'scanning'
+            AND NOT EXISTS (
+                SELECT 1 FROM scans s WHERE s.project_id = projects.id AND s.status = 'queued'
+            )
+        """)
+
+        query = """
+            SELECT p.*, COALESCE(s.security_score, 0) AS security_score
+            FROM projects p
+            LEFT JOIN scans s ON s.id = (
+                SELECT id FROM scans WHERE project_id = p.id ORDER BY scan_date DESC LIMIT 1
+            )
+        """
+        params: tuple = ()
+        if user["role"] != "admin":
+            query += " WHERE p.user_id = ?"
+            params = (user["id"],)
+        query += " ORDER BY p.upload_date DESC"
         return rows_to_dicts(db.execute(query, params).fetchall())
 
 

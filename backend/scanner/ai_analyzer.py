@@ -8,24 +8,24 @@ def enrich_findings(findings: list[dict]) -> list[dict]:
     enriched_findings = []
     
     for finding in findings:
-        # Generate AI explanation
-        ai_data = analyze_vulnerability(finding)
-        
-        # Inject AI results into the finding dictionary
-        # Map the AI keys to the existing database columns
-        finding["explanation"] = ai_data.get("explanation", "")
-        
-        # Combine danger and fix into recommendation
-        danger = ai_data.get("danger", "")
-        fix = ai_data.get("fix", "")
-        if danger and fix:
-            finding["recommendation"] = f"**Why it's dangerous:**\n{danger}\n\n**How to fix:**\n{fix}"
-        elif fix:
-            finding["recommendation"] = fix
-        elif danger:
-            finding["recommendation"] = f"**Why it's dangerous:**\n{danger}"
+        try:
+            ai_data = analyze_vulnerability(finding)
+            if ai_data and ai_data.get("explanation"):
+                finding["explanation"] = ai_data["explanation"]
             
-        finding["secure_example"] = ai_data.get("secure_example", "")
+            danger = ai_data.get("danger", "") if ai_data else ""
+            fix = ai_data.get("fix", "") if ai_data else ""
+            if danger and fix:
+                finding["recommendation"] = f"**Why it's dangerous:**\n{danger}\n\n**How to fix:**\n{fix}"
+            elif fix:
+                finding["recommendation"] = fix
+            elif danger:
+                finding["recommendation"] = f"**Why it's dangerous:**\n{danger}"
+                
+            if ai_data and ai_data.get("secure_example"):
+                finding["secure_example"] = ai_data["secure_example"]
+        except Exception as e:
+            print(f"AI enrichment skipped for finding {finding.get('issue')}: {e}")
         
         enriched_findings.append(finding)
         

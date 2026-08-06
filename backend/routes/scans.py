@@ -109,9 +109,11 @@ def _run_scan(scan_id: int, project: dict) -> None:
     try:
         result = scan_project(project["storage_path"], update_progress)
         
-        # Phase 1: AI Vulnerability Explanation Engine
-        # Enrich the findings with AI explanations, fixes, and secure examples
-        enriched_findings = enrich_findings(result["findings"])
+        try:
+            enriched_findings = enrich_findings(result["findings"])
+        except Exception as ai_err:
+            print(f"AI enrichment failed: {ai_err}")
+            enriched_findings = result["findings"]
         result["summary"]["findings_count"] = len(enriched_findings)
         
         with get_db() as db:

@@ -4,7 +4,8 @@ from config import settings
 
 client = OpenAI(
   base_url="https://integrate.api.nvidia.com/v1",
-  api_key=settings.nvidia_api_key
+  api_key=settings.nvidia_api_key,
+  timeout=4.0
 )
 
 def analyze_vulnerability(finding: dict) -> dict:
