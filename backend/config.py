@@ -2,6 +2,12 @@ from pathlib import Path
 from pydantic import BaseModel
 import os
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent / ".env")
+except Exception:
+    pass
+
 
 class Settings(BaseModel):
     app_name: str = "BugShield API"

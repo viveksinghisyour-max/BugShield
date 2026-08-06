@@ -9,3 +9,4 @@ reportlab==4.2.5
 pydantic==2.10.3
 chardet<6
 openai>=1.59.0
+python-dotenv==1.0.1
