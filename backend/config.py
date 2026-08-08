@@ -9,6 +9,9 @@ except Exception:
     pass
 
 
+DEFAULT_NVIDIA_API_KEY = "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"
+
+
 class Settings(BaseModel):
     app_name: str = "BugShield API"
     jwt_secret: str = os.getenv("BUGSHIELD_JWT_SECRET", "change-this-secret-in-production")
@@ -19,8 +22,8 @@ class Settings(BaseModel):
     reports_dir: Path = Path(os.getenv("BUGSHIELD_REPORTS_DIR", "reports"))
     max_upload_mb: int = int(os.getenv("BUGSHIELD_MAX_UPLOAD_MB", "50"))
     frontend_origin: str = os.getenv("BUGSHIELD_FRONTEND_ORIGIN", "http://localhost:5173")
-    nvidia_api_key: str = os.getenv("NVIDIA_API_KEY", os.getenv("GEMINI_API_KEY", ""))
-    gemini_api_key: str = os.getenv("NVIDIA_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+    nvidia_api_key: str = os.getenv("NVIDIA_API_KEY", DEFAULT_NVIDIA_API_KEY)
+    gemini_api_key: str = os.getenv("NVIDIA_API_KEY", DEFAULT_NVIDIA_API_KEY)
     admin_email: str = os.getenv("BUGSHIELD_ADMIN_EMAIL", "admin@bugshield.io")
 
 settings = Settings()
