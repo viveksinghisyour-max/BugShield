@@ -71,8 +71,8 @@ Format:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
             top_p=0.95,
-            max_tokens=4096,
-            extra_body={"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 2048},
+            max_tokens=16384,
+            extra_body={"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 16384},
             stream=True,
         )
 
@@ -131,10 +131,10 @@ def chat_with_ai(messages: list, system_context: str = "") -> str:
         completion = client.chat.completions.create(
             model="nvidia/nemotron-3-ultra-550b-a55b",
             messages=api_messages,
-            temperature=0.3,
+            temperature=1,
             top_p=0.95,
-            max_tokens=4096,
-            extra_body={"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 2048},
+            max_tokens=16384,
+            extra_body={"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 16384},
             stream=True,
         )
 
