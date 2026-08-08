@@ -5,10 +5,11 @@
 # BugShield — AI-Powered Vulnerability Detection Platform
 
 **Scan your code for security vulnerabilities, exposed secrets, and dependency risks in seconds.**  
-Get AI-generated fix suggestions and professional security reports — all from a beautiful cybersecurity dashboard.
+Get NVIDIA AI-generated fix suggestions, interactive security assistant chat, and professional security reports — all from a modern dark-themed cybersecurity dashboard.
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![NVIDIA API](https://img.shields.io/badge/NVIDIA%20API-Nemotron--3--Ultra-76B900?style=flat&logo=nvidia&logoColor=white)](https://build.nvidia.com)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat&logo=vite&logoColor=white)](https://vite.dev)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-06B6D4?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
@@ -20,7 +21,7 @@ Get AI-generated fix suggestions and professional security reports — all from 
 
 ## ✨ Overview
 
-BugShield is a full-stack cybersecurity mini-project that looks and feels like a real SaaS platform. It combines static code analysis, AI-style fix suggestions, and a premium dark-themed dashboard inspired by tools like **Snyk**, **Datadog**, and **CrowdStrike Falcon**.
+BugShield is an enterprise-grade AI-powered cybersecurity platform built to inspect source code, locate vulnerabilities, analyze risk severity, and provide AI-generated remediation guidance. Inspired by modern SaaS platforms like **Snyk**, **Datadog**, and **CrowdStrike Falcon**, BugShield combines static code analysis with **NVIDIA Nemotron-3 Ultra LLM** intelligence to offer deep security analysis, an interactive security chatbot, and comprehensive reporting.
 
 ---
 
@@ -28,250 +29,96 @@ BugShield is a full-stack cybersecurity mini-project that looks and feels like a
 
 | Feature | Description |
 |---|---|
-| 🤖 **AI Scanner Engine** | Detects 50+ vulnerability types — SQL injection, XSS, CSRF, command injection, path traversal, weak crypto, and more |
-| 🔑 **Secret Detection** | Finds hardcoded API keys, tokens, and passwords using regex + entropy analysis |
-| 📦 **Dependency Scanner** | Checks `requirements.txt`, `package.json`, and `pom.xml` for vulnerable packages |
-| 📊 **Security Dashboard** | Animated circular score meter, Chart.js analytics, activity timeline |
-| 🖥️ **Terminal Scan View** | Real-time animated terminal log while your project is being scanned |
-| 🃏 **Vulnerability Cards** | Each finding shown as a card with expandable code preview (red → green fix) |
-| 🔔 **Notification System** | Header bell with real-time critical vulnerability alerts |
-| 📄 **Report Export** | Download PDF, JSON, or CSV security reports |
-| 🌐 **Landing Page** | Startup-quality homepage with hero, features, and testimonials |
-| 🔒 **JWT Auth** | Secure authentication with bcrypt, role-based access (admin / developer / viewer) |
+| 🤖 **NVIDIA AI Security Engine** | Powered by `nvidia/nemotron-3-ultra-550b-a55b` with deep thinking reasoning to generate vulnerability explanations, risk analysis, and secure code fixes |
+| 💬 **BugShield AI Assistant** | Floating interactive security chat widget providing contextual guidance for specific vulnerability findings and secure coding practices |
+| 🔑 **Secret Detection** | Detects hardcoded API keys, private keys, tokens, and passwords using regular expression pattern matching and entropy analysis |
+| 📦 **Dependency Risk Analysis** | Inspects `requirements.txt`, `package.json`, and `pom.xml` manifest files for vulnerable dependencies and outdated packages |
+| 📊 **Interactive Analytics** | Animated circular security score gauge, Chart.js risk distribution charts, severity trends, and project activity timelines |
+| 🃏 **Vulnerability Remediation Cards** | Visual issue cards featuring side-by-side code previews (vulnerable snippet → secure fix example) and severity tags |
+| 🔒 **Role-Based Access Control (RBAC)** | Multi-tier authorization supporting **Admin**, **Developer**, and **Viewer** roles with dedicated User Management and Activity Audit logs |
+| 🔔 **Real-Time Security Feed** | Header notification center alerting users to critical findings, newly uploaded projects, and scan completions |
+| 📄 **Multi-Format Export** | Professional PDF security reports with score summaries alongside JSON and CSV exports |
 
 ---
 
-## 🖼️ Pages
+## 🖼️ Application Structure & Pages
 
 | Page | Route | Description |
 |---|---|---|
-| **Landing** | `/landing` | Startup homepage (public) |
-| **Login** | `/login` | Glassmorphism split-panel auth |
-| **Register** | `/register` | Account creation |
-| **Dashboard** | `/` | Security score, charts, activity timeline |
-| **Upload & Scan** | `/upload` | Drag & drop upload + terminal scan |
-| **Projects** | `/projects` | Card grid with status badges and score bars |
-| **Scan History** | `/history` | Vulnerability cards with code preview + severity filters |
-| **Reports** | `/reports` | Export PDF / JSON / CSV |
-| **Settings** | `/settings` | User profile, security score, preferences |
+| **Landing** | `/` | Startup homepage featuring platform overview, feature highlights, and interactive showcase |
+| **Sign In** | `/login` | Glassmorphism authentication panel |
+| **Register** | `/register` | Account registration with automatic developer role assignment |
+| **Dashboard** | `/dashboard` | Central command center showing security score, threat trends, severity breakdown, and activity timeline |
+| **Upload & Scan** | `/dashboard/upload` | Drag-and-drop file upload (`.zip`, `.py`, `.js`, `.ts`, `.java`, `.env`, `.json`) or repository URL scanning |
+| **Projects** | `/dashboard/projects` | Project workspace management showing project health badges, security scores, and quick scan triggers |
+| **Scan History** | `/dashboard/history` | Historical vulnerability findings browser with severity filtering and AI remediation previews |
+| **Reports** | `/dashboard/reports` | Report export center for PDF, JSON, and CSV downloads |
+| **User Management** | `/dashboard/users` | Admin panel for managing user roles, user promotion, and viewing activity audit trails |
+| **Settings** | `/dashboard/settings` | User profile management, password updates, and security preferences |
 
 ---
 
-## 🗂️ Project Structure
+## 🧠 Scanner Capabilities & Scoring Model
 
-```text
-BugShield/
-├── .vscode/
-│   └── settings.json         # Suppresses false-positive Tailwind CSS warnings
-├── backend/                  # Python FastAPI backend
-│   ├── app.py                # Application entry point
-│   ├── config.py             # Settings (env vars)
-│   ├── database.py           # SQLite schema & helpers
-│   ├── routes/
-│   │   ├── auth.py           # POST /register, POST /login
-│   │   ├── projects.py       # Upload & project CRUD
-│   │   ├── scans.py          # Scan engine + progress + history
-│   │   ├── reports.py        # PDF / JSON / CSV export
-│   │   └── users.py          # Users list + notifications
-│   ├── scanner/
-│   │   └── engine.py         # Core AI scan engine
-│   └── utils/                # Auth, file handling helpers
-│
-└── frontend/                 # React + Vite + TailwindCSS
-    ├── index.html
-    ├── tailwind.config.js
-    ├── vite.config.js        # Dev server locked to port 5173 (strictPort)
-    └── src/
-        ├── App.jsx           # Routes
-        ├── styles.css        # Design system + animations
-        ├── api/
-        │   └── client.js     # Fetch wrapper + auth
-        ├── components/
-        │   ├── AppLayout.jsx       # Sidebar + header
-        │   ├── SecurityMeter.jsx   # Circular SVG score gauge
-        │   ├── TerminalLog.jsx     # Animated scan terminal
-        │   ├── VulnerabilityCard.jsx  # Finding card + code preview
-        │   ├── NotificationBell.jsx   # Header notification dropdown
-        │   ├── ScanProgressBar.jsx    # Gradient progress bar
-        │   ├── StatCard.jsx           # Animated stat card
-        │   └── SeverityBadge.jsx      # Color-coded badge
-        └── pages/
-            ├── Landing.jsx       # Public homepage
-            ├── Login.jsx         # Auth page
-            ├── Register.jsx      # Registration
-            ├── Dashboard.jsx     # Analytics hub
-            ├── UploadProject.jsx # Drag & drop + scan
-            ├── ScanHistory.jsx   # Findings browser
-            ├── Projects.jsx      # Project manager
-            ├── Reports.jsx       # Report export
-            └── Settings.jsx      # User profile
-```
+### Detected Vulnerability Categories
+- **Injection Attacks**: SQL Injection, OS Command Injection, LDAP Injection, Path Traversal
+- **Web Application Risks**: Reflected & Stored XSS, CSRF, Unrestricted File Uploads, Open Redirects
+- **Secrets & Credentials**: Hardcoded API Keys, Passwords, Private Keys, JWT Tokens, Connection Strings
+- **Cryptographic Weaknesses**: Weak Hashing (MD5, SHA-1), Hardcoded Salts/IVs, Insecure Randomness
+- **Authentication & Authorization**: Insecure Session Management, Weak JWT Verification, Missing RBAC Checks
+- **Software Supply Chain**: Outdated & Vulnerable Dependencies in Python, Node.js, and Java manifests
+
+### Security Score Formula
+$$\text{Security Score} = \max\Big(0,\, 100 - (10 \times \text{Critical}) - (5 \times \text{High}) - (2 \times \text{Medium})\Big)$$
 
 ---
 
-## 🚀 Running Locally
+## 🔒 Role-Based Access Control (RBAC)
 
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- npm
+BugShield strictly enforces role permissions across the backend API and frontend views:
 
-### 1. Backend
-
-```bash
-cd BugShield/backend
-
-# Create and activate virtual environment
-python -m venv .venv
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # macOS/Linux
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-copy .env.example .env        # Windows
-# cp .env.example .env        # macOS/Linux
-
-# Start the server
-uvicorn app:app --reload
-```
-
-> Backend runs at **http://localhost:8000**
-
-### 2. Frontend
-
-```bash
-cd BugShield/frontend
-
-# Install dependencies
-npm install
-
-# Configure environment
-copy .env.example .env        # Windows
-# cp .env.example .env        # macOS/Linux
-
-# Start dev server
-npm run dev
-```
-
-> Frontend always runs at **http://localhost:5173** — `strictPort` is enabled, so if 5173 is already in use the server will show an error instead of silently switching ports. Kill any existing dev server first (`Ctrl+C`).
-
-### 3. Open in Browser
-
-| URL | Page |
-|---|---|
-| http://localhost:5173/landing | 🌐 Public Landing Page |
-| http://localhost:5173/register | 📝 Create Account |
-| http://localhost:5173/login | 🔐 Sign In |
-| http://localhost:5173/ | 📊 Dashboard (after login) |
+* **Admin**: Full control — manage user roles, view all user activity audit logs, delete projects, trigger scans, and view system analytics.
+* **Developer**: Standard developer access — upload code repositories, initiate scans, view assigned projects, and query the AI Chatbot.
+* **Viewer**: Read-only access — inspect assigned project findings and download security reports.
 
 ---
 
-## 🔒 Role-Based Access & Admin Configuration
-
-BugShield implements secure Role-Based Access Control (RBAC) supporting three roles:
-*   **Admin**: Full system access, including managing other users, viewing all user activity logs, deleting projects, running scans, and viewing all system assets.
-*   **Developer**: Standard access (uploading code, running scans, viewing their own projects).
-*   **Viewer**: Read-only access (viewing their own assigned projects and scans).
-
-### Admin Account Assignment (Environment Configured)
-
-To secure the registration flow against privilege escalation vulnerabilities, registrations strictly default to the **`developer`** role. 
-
-To claim your administrator/owner account, configure your admin email address using the `BUGSHIELD_ADMIN_EMAIL` environment variable:
-
-1. **Configure the environment variable** (in your `.env` file or host platform environment variables like Render):
-   ```bash
-   BUGSHIELD_ADMIN_EMAIL=your-real-email@domain.com
-   ```
-2. **Register the account**:
-   Go to the `/register` page and sign up with that exact email address. The backend will automatically recognize it and assign the **`admin`** role.
-3. **Manage Others**:
-   As an Admin, you can access the **User Management** screen (`/users`) in the dashboard to promote other registered users or change their roles as needed.
-
----
-
-## 🔌 API Endpoints
+## 🔌 Backend API Specification
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/register` | Register a new user |
-| `POST` | `/login` | Authenticate, returns JWT token |
-| `POST` | `/upload` | Upload a project file or ZIP |
-| `POST` | `/scan` | Start an AI vulnerability scan |
-| `GET` | `/scan/{id}/progress` | Real-time scan progress (polling) |
-| `GET` | `/scan/{id}` | Scan results + vulnerabilities |
-| `DELETE` | `/projects/{id}` | Delete a project and its scan data |
-| `GET` | `/projects` | List user's projects |
-| `GET` | `/scan-history` | All completed scans |
-| `GET` | `/dashboard` | Aggregated stats + charts data |
-| `GET` | `/report` | Download PDF / JSON / CSV report |
-| `GET` | `/notifications` | User notification feed (last 20) |
-| `POST` | `/notifications/{id}/read` | Mark a notification as read |
-| `GET` | `/users` | List all users (admin only) |
+| `POST` | `/register` | User account registration |
+| `POST` | `/login` | Authenticates user and returns JWT bearer token |
+| `POST` | `/upload` | Uploads project source files, ZIP archives, or repository links |
+| `POST` | `/scan` | Triggers static scan engine and NVIDIA AI vulnerability analysis |
+| `GET` | `/scan/{id}/progress` | Fetches real-time scan completion status |
+| `GET` | `/scan/{id}` | Retrieves scan results, security score, and vulnerability list |
+| `POST` | `/chat` | Sends queries to BugShield AI Assistant powered by NVIDIA Nemotron |
+| `GET` | `/projects` | Lists user projects with latest scan scores and status |
+| `DELETE` | `/projects/{id}` | Deletes project record, storage files, and scan history |
+| `GET` | `/scan-history` | Lists all historical scan executions |
+| `GET` | `/dashboard` | Returns aggregated metrics, threat distributions, and trend data |
+| `GET` | `/report` | Generates and streams downloadable PDF, JSON, or CSV reports |
+| `GET` | `/notifications` | Retrieves user's notification feed |
+| `POST` | `/notifications/{id}/read` | Marks a specific notification as read |
+| `GET` | `/users` | Lists system users and audit info (Admin only) |
 
 ---
 
-## 🧠 Scanner Capabilities
+## 🛠️ Architecture & Tech Stack
 
-The AI scanner engine detects the following vulnerability categories:
-
-- **Injection** — SQL, OS command, LDAP injection patterns
-- **XSS / CSRF** — Cross-site scripting, request forgery
-- **Secrets** — API keys, tokens, passwords, connection strings
-- **Cryptography** — Weak algorithms (MD5, SHA1, DES), hardcoded IVs
-- **Authentication** — Insecure session handling, JWT misuse
-- **Dependencies** — Outdated or known-vulnerable packages
-- **Path Traversal** — Unsafe file access patterns
-- **Debug Mode** — Exposed debug endpoints and stack traces
-- **Insecure Upload** — Unrestricted file upload vulnerabilities
-
-**Security Score Formula:** `100 − (Critical×10) − (High×5) − (Medium×2)`
-
----
-
-## 🎨 Design System
-
-| Token | Value |
+| Layer | Technology & Tools |
 |---|---|
-| Background | `#0B1020` |
-| Card Surface | `#111827` with glassmorphism |
-| Primary Blue | `#3B82F6` |
-| Success / Low | `#22C55E` |
-| Warning / Medium | `#F59E0B` |
-| High Severity | `#F97316` |
-| Critical | `#EF4444` + glow animation |
-| Body Font | Inter |
-| Code Font | JetBrains Mono |
-
----
-
-## 🛡️ Production Notes
-
-- Replace `BUGSHIELD_JWT_SECRET` with a cryptographically random 64-character secret
-- Enable HTTPS in production (use a reverse proxy like Nginx or Caddy)
-- Store uploaded files outside web-accessible directories
-- Switch SQLite → **PostgreSQL** for multi-user production scale
-- Move background scan jobs to a task queue (Celery + Redis) for reliability
-- Add rate limiting on `/login` and `/register` to prevent brute force
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Backend | Python 3.11, FastAPI, SQLite, uvicorn |
-| Auth | JWT (python-jose), bcrypt (passlib) |
-| Reports | ReportLab (PDF), csv, json |
-| Frontend | React 18, Vite 6, TailwindCSS 3 |
-| Charts | Chart.js + react-chartjs-2 |
-| Icons | Lucide React |
-| Routing | React Router DOM v6 |
+| **AI Engine** | NVIDIA NIM API (`nvidia/nemotron-3-ultra-550b-a55b`), OpenAI Python SDK |
+| **Backend Framework** | Python 3.11+, FastAPI, Uvicorn, Pydantic v2 |
+| **Database & Auth** | SQLite, PyJWT (HS256), Passlib / Bcrypt password hashing |
+| **Reporting** | ReportLab PDF Engine, CSV, JSON |
+| **Frontend Framework** | React 18, Vite 6, React Router DOM v6 |
+| **Styling & Icons** | Vanilla CSS Design System, TailwindCSS 3, Lucide React Icons |
+| **Data Visualization** | Chart.js, React-ChartJS-2 |
 
 ---
 
 <div align="center">
-  <sub>Built with ❤️ as a cybersecurity mini-project · © 2025 BugShield</sub>
+  <sub>Built with ❤️ for AI-driven application security · BugShield Platform</sub>
 </div>
