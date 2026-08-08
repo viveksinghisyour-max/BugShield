@@ -5,20 +5,32 @@ from config import settings
 
 
 def _get_client() -> OpenAI:
-    api_key = settings.gemini_api_key or os.getenv("GEMINI_API_KEY") or os.getenv("NVIDIA_API_KEY") or "dummy-key-for-init"
+    api_key = (
+        settings.nvidia_api_key
+        or settings.gemini_api_key
+        or os.getenv("NVIDIA_API_KEY")
+        or os.getenv("GEMINI_API_KEY")
+        or "dummy-key-for-init"
+    )
     return OpenAI(
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        base_url="https://integrate.api.nvidia.com/v1",
         api_key=api_key,
-        timeout=8.0,
+        timeout=30.0,
     )
 
 
 def analyze_vulnerability(finding: dict) -> dict:
     """
-    Calls Gemini 2.0 Flash to analyze a vulnerability finding
+    Calls NVIDIA Nemotron-3 Ultra to analyze a vulnerability finding
     and generate an explanation, fix, and secure code example.
     """
-    if not settings.gemini_api_key or settings.gemini_api_key == "your_gemini_api_key_here":
+    api_key = (
+        settings.nvidia_api_key
+        or settings.gemini_api_key
+        or os.getenv("NVIDIA_API_KEY")
+        or os.getenv("GEMINI_API_KEY")
+    )
+    if not api_key or api_key in ("your_nvidia_api_key_here", "your_gemini_api_key_here"):
         return {}
 
     prompt = f"""You are a cybersecurity expert.
@@ -55,15 +67,23 @@ Format:
     try:
         client = _get_client()
         completion = client.chat.completions.create(
-            model="gemini-2.0-flash",
+            model="nvidia/nemotron-3-ultra-550b-a55b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
-            top_p=0.7,
-            max_tokens=1024,
-            stream=False,
+            top_p=0.95,
+            max_tokens=4096,
+            extra_body={"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 2048},
+            stream=True,
         )
 
-        response_text = completion.choices[0].message.content
+        content_chunks = []
+        for chunk in completion:
+            if not chunk.choices:
+                continue
+            if chunk.choices[0].delta.content is not None:
+                content_chunks.append(chunk.choices[0].delta.content)
+
+        response_text = "".join(content_chunks).strip()
 
         if response_text.startswith("```json"):
             response_text = response_text[7:]
@@ -85,11 +105,17 @@ Format:
 
 def chat_with_ai(messages: list, system_context: str = "") -> str:
     """
-    Handles a conversation with BugShield AI using Gemini 2.0 Flash.
+    Handles a conversation with BugShield AI using NVIDIA Nemotron-3 Ultra.
     Enforces a strict cybersecurity persona.
     """
-    if not settings.gemini_api_key or settings.gemini_api_key == "your_gemini_api_key_here":
-        return "BugShield AI key is not set. Please get a free Gemini API key from https://aistudio.google.com/app/apikey and add GEMINI_API_KEY to your environment variables."
+    api_key = (
+        settings.nvidia_api_key
+        or settings.gemini_api_key
+        or os.getenv("NVIDIA_API_KEY")
+        or os.getenv("GEMINI_API_KEY")
+    )
+    if not api_key or api_key in ("your_nvidia_api_key_here", "your_gemini_api_key_here"):
+        return "BugShield AI key is not set. Please set NVIDIA_API_KEY in your environment variables."
 
     system_prompt = (
         "You are BugShield AI, a highly specialized cybersecurity assistant. "
@@ -103,19 +129,29 @@ def chat_with_ai(messages: list, system_context: str = "") -> str:
     try:
         client = _get_client()
         completion = client.chat.completions.create(
-            model="gemini-2.0-flash",
+            model="nvidia/nemotron-3-ultra-550b-a55b",
             messages=api_messages,
             temperature=0.3,
-            top_p=0.8,
-            max_tokens=1024,
-            stream=False,
+            top_p=0.95,
+            max_tokens=4096,
+            extra_body={"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 2048},
+            stream=True,
         )
-        return completion.choices[0].message.content
+
+        content_chunks = []
+        for chunk in completion:
+            if not chunk.choices:
+                continue
+            if chunk.choices[0].delta.content is not None:
+                content_chunks.append(chunk.choices[0].delta.content)
+
+        return "".join(content_chunks)
     except Exception as e:
         err_str = str(e)
         print(f"AI Chat Error: {err_str}")
-        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "Quota exceeded" in err_str:
-            return "The Gemini API rate limit / quota was reached for this key. Please wait a minute or set a new free Gemini API key from https://aistudio.google.com/app/apikey in your environment settings."
+        if "429" in err_str or "Quota exceeded" in err_str:
+            return "The NVIDIA API rate limit / quota was reached for this key. Please wait a moment before trying again."
         if "401" in err_str or "403" in err_str or "API_KEY_INVALID" in err_str:
-            return "The configured Gemini API key is invalid. Please get a free API key starting with 'AIzaSy...' from https://aistudio.google.com/app/apikey."
+            return "The configured NVIDIA API key is invalid. Please check your NVIDIA_API_KEY in environment settings."
         return f"Unable to reach BugShield AI network: {err_str}"
+
