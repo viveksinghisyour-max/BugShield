@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { CloudUpload, FileCode, X, CheckCircle2, AlertTriangle, Play } from "lucide-react";
 import { api } from "../api/client.js";
 import TerminalLog from "../components/TerminalLog.jsx";
@@ -18,11 +19,13 @@ const SCAN_LINES = [
 ];
 
 export default function UploadProject() {
+  const navigate = useNavigate();
   const [projectName, setProjectName] = useState("");
   const [file, setFile] = useState(null);
   const [repoUrl, setRepoUrl] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [stage, setStage] = useState("idle"); // idle | uploaded | scanning | done | error
+  const [uploadedProjectId, setUploadedProjectId] = useState(null);
   const [scanId, setScanId] = useState(null);
   const [scanResult, setScanResult] = useState(null);
   const [progress, setProgress] = useState(0);
@@ -53,6 +56,7 @@ export default function UploadProject() {
     try {
       const result = await api("/upload", { method: "POST", body: form });
       setStage("uploaded");
+      setUploadedProjectId(result.id);
       setMessage(`Project "${result.project_name}" uploaded successfully.`);
       setScanId(null);
       setScanResult(null);
@@ -63,18 +67,17 @@ export default function UploadProject() {
   };
 
   const startScan = async () => {
-    if (!message.includes("uploaded")) return;
     try {
-      // Find project via projects list
-      const projects = await api("/projects");
-      const proj = projects.find((p) => p.project_name === projectName);
-      if (!proj) return;
-      const res = await api("/scan", { method: "POST", body: JSON.stringify({ project_id: proj.id }) });
-      setScanId(res.scan_id);
-      setStage("scanning");
-      setProgress(0);
-      setTerminalLines(["Initializing BugShield AI scanner…"]);
-      pollScan(res.scan_id);
+      let projId = uploadedProjectId;
+      if (!projId) {
+        const projects = await api("/projects");
+        const proj = projects.find((p) => p.project_name === projectName);
+        if (proj) projId = proj.id;
+      }
+      if (!projId) return;
+
+      await api("/scan", { method: "POST", body: JSON.stringify({ project_id: projId }) });
+      navigate("/dashboard/projects");
     } catch (err) {
       setStage("error");
       setMessage(err.message);
@@ -112,7 +115,7 @@ export default function UploadProject() {
 
   const reset = () => {
     setProjectName(""); setFile(null); setRepoUrl("");
-    setStage("idle"); setScanId(null); setScanResult(null);
+    setStage("idle"); setUploadedProjectId(null); setScanId(null); setScanResult(null);
     setProgress(0); setTerminalLines([]); setMessage("");
   };
 
@@ -252,9 +255,9 @@ export default function UploadProject() {
           <TerminalLog lines={terminalLines} status={stage === "done" ? "completed" : "running"} progress={progress} />
           {stage === "done" && (
             <div className="flex gap-3">
-              <a href="/history" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-sm font-bold text-white glow-green">
+              <Link to="/dashboard/history" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-sm font-bold text-white glow-green">
                 <CheckCircle2 size={14} /> View Results
-              </a>
+              </Link>
               <button onClick={reset} className="px-5 py-2.5 rounded-xl border border-white/10 hover:bg-white/[0.05] text-sm text-slate-400">
                 Scan Another
               </button>

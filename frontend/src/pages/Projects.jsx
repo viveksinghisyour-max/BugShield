@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { FolderOpen, Play, Trash2, Clock, ShieldCheck, AlertTriangle } from "lucide-react";
 import { api } from "../api/client.js";
 
@@ -45,9 +46,9 @@ export default function Projects() {
           <h1 className="text-2xl font-black text-white">Projects</h1>
           <p className="text-sm text-slate-500 mt-0.5">{projects.length} project{projects.length !== 1 ? "s" : ""} in your workspace</p>
         </div>
-        <a href="/upload" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-bold text-white transition-all glow-blue">
+        <Link to="/dashboard/upload" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-bold text-white transition-all glow-blue">
           + New Project
-        </a>
+        </Link>
       </div>
 
       {message && (
@@ -61,9 +62,9 @@ export default function Projects() {
         <div className="glass rounded-2xl p-16 flex flex-col items-center gap-4 text-slate-600">
           <FolderOpen size={40} className="opacity-30" />
           <p className="text-sm">No projects yet.</p>
-          <a href="/upload" className="text-sm text-blue-400 hover:text-blue-300 font-semibold">
+          <Link to="/dashboard/upload" className="text-sm text-blue-400 hover:text-blue-300 font-semibold">
             Upload your first project →
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
