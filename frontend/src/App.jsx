@@ -13,18 +13,22 @@ import Settings from "./pages/Settings.jsx";
 import UserManagement from "./pages/UserManagement.jsx";
 import UserActivity from "./pages/UserActivity.jsx";
 import Landing from "./pages/Landing.jsx";
-import { clearSession } from "./utils/auth.js";
-export default function App() {
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+
+function AppRoutes() {
   const navigate = useNavigate();
-  const logout = () => {
-    clearSession();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
     navigate("/login");
   };
 
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public landing */}
       <Route path="/" element={<Landing />} />
+
       {/* Public routes (guests only) */}
       <Route element={<PublicRoute />}>
         <Route path="/login" element={<Login />} />
@@ -36,7 +40,7 @@ export default function App() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <AppLayout onLogout={logout} />
+            <AppLayout onLogout={handleLogout} />
           </ProtectedRoute>
         }
       >
@@ -52,3 +56,12 @@ export default function App() {
     </Routes>
   );
 }
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  );
+}
+

@@ -2,9 +2,18 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL,
+    password TEXT DEFAULT 'OTP_AUTH',
     role TEXT NOT NULL CHECK(role IN ('admin', 'developer', 'viewer')),
     created_at TEXT NOT NULL
+);
+
+CREATE TABLE otp_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    code TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    attempts INTEGER DEFAULT 0
 );
 
 CREATE TABLE projects (

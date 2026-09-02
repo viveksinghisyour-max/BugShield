@@ -1,19 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { isAuthenticated } from "../utils/auth";
+import React from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { Shield } from "lucide-react";
 
 export default function PublicRoute({ children }) {
-  const [isAuth, setIsAuth] = useState(null); // null means checking
-  const location = useLocation();
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    // Check authentication status
-    setIsAuth(isAuthenticated());
-  }, [location.pathname]);
-
-  // Show loading state to prevent UI flicker while validating
-  if (isAuth === null) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#080d1a] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 animate-pulse">
@@ -28,11 +21,10 @@ export default function PublicRoute({ children }) {
     );
   }
 
-  // If authenticated, prevent access to public routes (like login/register) and redirect to dashboard
-  if (isAuth) {
+  if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Render public components
   return children ? children : <Outlet />;
 }
+

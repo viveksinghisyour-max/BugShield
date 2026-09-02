@@ -34,6 +34,7 @@ def health():
 
 
 app.include_router(auth.router)
+app.include_router(auth.router, prefix="/auth")
 app.include_router(projects.router)
 app.include_router(scans.router)
 app.include_router(reports.router)
