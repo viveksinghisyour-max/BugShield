@@ -9,7 +9,8 @@ except Exception:
     pass
 
 
-DEFAULT_NVIDIA_API_KEY = "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"
+DEFAULT_NVIDIA_API_KEY = "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"
+DEFAULT_NVIDIA_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b"
 
 
 class Settings(BaseModel):
@@ -23,7 +24,20 @@ class Settings(BaseModel):
     max_upload_mb: int = int(os.getenv("BUGSHIELD_MAX_UPLOAD_MB", "50"))
     frontend_origin: str = os.getenv("BUGSHIELD_FRONTEND_ORIGIN", "http://localhost:5173")
     nvidia_api_key: str = os.getenv("NVIDIA_API_KEY", DEFAULT_NVIDIA_API_KEY)
+    nvidia_model: str = os.getenv("NVIDIA_MODEL", DEFAULT_NVIDIA_MODEL)
     gemini_api_key: str = os.getenv("NVIDIA_API_KEY", DEFAULT_NVIDIA_API_KEY)
     admin_email: str = os.getenv("BUGSHIELD_ADMIN_EMAIL", "admin@bugshield.io")
 
+
+    # SMTP Email Configuration
+    smtp_host: str = os.getenv("SMTP_HOST", "")
+    smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user: str = os.getenv("SMTP_USER", "")
+    smtp_password: str = os.getenv("SMTP_PASSWORD", "")
+    smtp_from_email: str = os.getenv("SMTP_FROM_EMAIL", "")
+    smtp_tls: bool = os.getenv("SMTP_TLS", "true").lower() in ("true", "1", "yes")
+    smtp_ssl: bool = os.getenv("SMTP_SSL", "false").lower() in ("true", "1", "yes")
+    dev_mode: bool = os.getenv("BUGSHIELD_DEV_MODE", "true").lower() in ("true", "1", "yes")
+
 settings = Settings()
+

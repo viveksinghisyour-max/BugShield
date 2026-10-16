@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from config import settings
 from database import get_db, row_to_dict, utc_now
+from services.email_service import is_smtp_configured, send_otp_email
 from utils.security import create_access_token, current_user, hash_password, verify_password
 from utils.validation import clean_email, clean_email_strict, validate_password
 
@@ -63,17 +64,34 @@ def send_otp(payload: SendOTPRequest):
             (email, code, expires_at, now_str),
         )
 
+    # Attempt to dispatch real email via SMTP
+    email_sent, email_status = send_otp_email(email, code)
+
     print(f"\n==================================================")
     print(f" [+] BUGSHIELD AI EMAIL OTP FOR {email}: [ {code} ] ")
+    if email_sent:
+        print(f" [✓] Real email successfully delivered via SMTP to {email}")
+    else:
+        print(f" [!] SMTP email delivery note: {email_status}")
     print(f" Valid for 5 minutes. Max 3 verification attempts. ")
     print(f"==================================================\n")
 
-    return {
-        "message": f"Verification code sent to {email}",
+    response_data = {
+        "message": f"Verification code sent to {email}" if email_sent else f"Verification code generated for {email}",
         "email": email,
+        "sent_via_email": email_sent,
         "expires_in_seconds": 300,
         "cooldown_seconds": 60,
     }
+
+    # If email was not sent, provide helpful dev warning / dev_otp fallback
+    if not email_sent:
+        response_data["warning"] = email_status
+        if settings.dev_mode or not is_smtp_configured():
+            response_data["dev_otp"] = code
+
+    return response_data
+
 
 
 @router.post("/verify-otp")

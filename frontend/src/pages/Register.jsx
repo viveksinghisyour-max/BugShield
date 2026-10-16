@@ -13,6 +13,8 @@ export default function Register() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [devOtp, setDevOtp] = useState("");
+  const [sentViaEmail, setSentViaEmail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
@@ -56,6 +58,8 @@ export default function Register() {
       const res = await sendOtp(email.trim());
       setStep(2);
       setCooldown(60);
+      if (res.dev_otp) setDevOtp(res.dev_otp);
+      if (res.sent_via_email) setSentViaEmail(true);
       setInfo(res.message || `Verification code sent to ${email}`);
       setTimeout(() => inputRefs.current[0]?.focus(), 150);
     } catch (err) {
@@ -129,7 +133,9 @@ export default function Register() {
       const res = await sendOtp(email.trim());
       setCooldown(60);
       setOtp(["", "", "", "", "", ""]);
-      setInfo("A new 6-digit code has been sent!");
+      if (res.dev_otp) setDevOtp(res.dev_otp);
+      if (res.sent_via_email) setSentViaEmail(true);
+      setInfo(res.message || "A new 6-digit code has been sent!");
       inputRefs.current[0]?.focus();
     } catch (err) {
       setError(err.message || "Failed to resend verification code.");
@@ -137,6 +143,7 @@ export default function Register() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-shield-bg flex">
@@ -286,6 +293,40 @@ export default function Register() {
                 </div>
               )}
 
+              {sentViaEmail && (
+                <div className="mt-3 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-center gap-2">
+                  <CheckCircle size={14} className="text-emerald-400 flex-none" />
+                  <span>Real email sent! Check your inbox & spam folder.</span>
+                </div>
+              )}
+
+              {devOtp && (
+                <div className="mt-4 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25 text-xs text-blue-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                      <span className="font-bold text-blue-300">Local / Dev Mode</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const digits = devOtp.split("");
+                        const newOtp = ["", "", "", "", "", ""];
+                        digits.forEach((d, i) => { if (i < 6) newOtp[i] = d; });
+                        setOtp(newOtp);
+                        inputRefs.current[5]?.focus();
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-blue-600/40 hover:bg-blue-600/60 text-white font-mono text-[11px] font-bold transition-all border border-blue-400/30 shadow-sm"
+                    >
+                      Autofill OTP ({devOtp})
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    SMTP is not configured in <code className="text-blue-300 font-mono">backend/.env</code>. To receive OTP in your actual inbox, add your Gmail or SMTP credentials.
+                  </p>
+                </div>
+              )}
+
               <form onSubmit={handleVerifyOtp} className="mt-6 space-y-6">
                 <div>
                   <div className="flex justify-between items-center mb-2">
@@ -294,6 +335,7 @@ export default function Register() {
                     </label>
                     <span className="text-[11px] text-amber-400/90 font-mono">Max 3 attempts</span>
                   </div>
+
 
                   <div className="flex gap-2 justify-between" onPaste={handlePaste}>
                     {otp.map((digit, idx) => (

@@ -12,3 +12,13 @@ const supabaseKey =
   "sb_publishable_qOJbft2ghC1JAr-0PlMwHA_Au6QJdix";
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+export const isSupabaseConfigured = () => {
+  return Boolean(
+    supabaseUrl &&
+    !supabaseUrl.includes("ieaknpggvxsvqewolufs") &&
+    supabaseKey &&
+    !supabaseKey.includes("qOJbft2ghC1JAr-0PlMwHA_Au6QJdix")
+  );
+};
+

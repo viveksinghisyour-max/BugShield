@@ -4,22 +4,28 @@ from openai import OpenAI
 from config import settings
 
 
-DEFAULT_KEY = "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"
+DEFAULT_KEY = "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"
+DEFAULT_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b"
 
 
 def _get_api_key() -> str:
-    key = settings.nvidia_api_key or os.getenv("NVIDIA_API_KEY") or os.getenv("GEMINI_API_KEY")
+    key = getattr(settings, "nvidia_api_key", None) or os.getenv("NVIDIA_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not key or not key.startswith("nvapi-"):
         return DEFAULT_KEY
     return key
+
+
+def _get_model() -> str:
+    return getattr(settings, "nvidia_model", None) or os.getenv("NVIDIA_MODEL") or DEFAULT_MODEL
 
 
 def _get_client() -> OpenAI:
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
         api_key=_get_api_key(),
-        timeout=30.0,
+        timeout=45.0,
     )
+
 
 
 def analyze_vulnerability(finding: dict) -> dict:
@@ -60,12 +66,13 @@ Format:
 """
     try:
         client = _get_client()
+        model = _get_model()
         completion = client.chat.completions.create(
-            model="nvidia/nemotron-3-ultra-550b-a55b",
+            model=model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
             top_p=0.95,
-            max_tokens=4096,
+            max_tokens=8192,
             extra_body={"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 2048},
             stream=True,
         )
@@ -99,7 +106,7 @@ Format:
 
 def chat_with_ai(messages: list, system_context: str = "") -> str:
     """
-    Handles a conversation with BugShield AI using NVIDIA Nemotron-3 Ultra.
+    Handles a conversation with BugShield AI using NVIDIA Nemotron.
     Enforces a strict cybersecurity persona.
     """
     system_prompt = (
@@ -113,15 +120,17 @@ def chat_with_ai(messages: list, system_context: str = "") -> str:
 
     try:
         client = _get_client()
+        model = _get_model()
         completion = client.chat.completions.create(
-            model="nvidia/nemotron-3-ultra-550b-a55b",
+            model=model,
             messages=api_messages,
             temperature=0.7,
             top_p=0.95,
-            max_tokens=4096,
+            max_tokens=8192,
             extra_body={"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 2048},
             stream=True,
         )
+
 
         content_chunks = []
         for chunk in completion:
