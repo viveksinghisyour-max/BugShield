@@ -25,7 +25,16 @@ def is_smtp_configured() -> bool:
 def _send_via_resend(recipient_email: str, subject: str, html_content: str, text_content: str) -> tuple[bool, str]:
     """Dispatches email via Resend HTTPS API (Port 443 - works on Render free tier)."""
     try:
-        from_email = settings.smtp_from_email or "BugShield <onboarding@resend.dev>"
+        # Resend rejects @gmail.com and other public webmail senders without domain DNS records.
+        # Use onboarding@resend.dev unless a custom verified domain sender is configured.
+        resend_from = getattr(settings, "resend_from_email", "") or os.getenv("RESEND_FROM_EMAIL", "")
+        if not resend_from:
+            candidate = settings.smtp_from_email or ""
+            if candidate and not any(d in candidate.lower() for d in ("@gmail.", "@yahoo.", "@outlook.", "@hotmail.")):
+                resend_from = candidate if "<" in candidate else f"BugShield <{candidate}>"
+            else:
+                resend_from = "BugShield <onboarding@resend.dev>"
+
         res = requests.post(
             "https://api.resend.com/emails",
             headers={
@@ -33,7 +42,7 @@ def _send_via_resend(recipient_email: str, subject: str, html_content: str, text
                 "Content-Type": "application/json",
             },
             json={
-                "from": from_email,
+                "from": resend_from,
                 "to": [recipient_email],
                 "subject": subject,
                 "html": html_content,
