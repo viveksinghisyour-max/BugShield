@@ -29,6 +29,10 @@ class Settings(BaseModel):
     admin_email: str = os.getenv("BUGSHIELD_ADMIN_EMAIL", "admin@bugshield.io")
 
 
+    # HTTP-Based Email API (Recommended for cloud hosting like Render/Vercel where SMTP ports are blocked)
+    resend_api_key: str = os.getenv("RESEND_API_KEY", "")
+    brevo_api_key: str = os.getenv("BREVO_API_KEY", "")
+
     # SMTP Email Configuration
     smtp_host: str = os.getenv("SMTP_HOST", "")
     smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
@@ -40,4 +44,5 @@ class Settings(BaseModel):
     dev_mode: bool = os.getenv("BUGSHIELD_DEV_MODE", "true").lower() in ("true", "1", "yes")
 
 settings = Settings()
+
 

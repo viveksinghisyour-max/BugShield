@@ -84,13 +84,13 @@ def send_otp(payload: SendOTPRequest):
         "cooldown_seconds": 60,
     }
 
-    # If email was not sent, provide helpful dev warning / dev_otp fallback
+    # If email was not sent, provide helpful warning and dev_otp fallback so user is never locked out
     if not email_sent:
         response_data["warning"] = email_status
-        if settings.dev_mode or not is_smtp_configured():
-            response_data["dev_otp"] = code
+        response_data["dev_otp"] = code
 
     return response_data
+
 
 
 

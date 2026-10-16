@@ -1,30 +1,101 @@
 import logging
+import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import requests
 from config import settings
 
 logger = logging.getLogger("bugshield.email")
 
 
+def is_email_configured() -> bool:
+    """Check if any email provider is configured (HTTP API or SMTP)."""
+    return bool(
+        getattr(settings, "resend_api_key", "")
+        or getattr(settings, "brevo_api_key", "")
+        or (settings.smtp_host and settings.smtp_user and settings.smtp_password)
+    )
+
+
 def is_smtp_configured() -> bool:
-    """Check if SMTP credentials are fully provided."""
-    return bool(settings.smtp_host and settings.smtp_user and settings.smtp_password)
+    return is_email_configured()
+
+
+def _send_via_resend(recipient_email: str, subject: str, html_content: str, text_content: str) -> tuple[bool, str]:
+    """Dispatches email via Resend HTTPS API (Port 443 - works on Render free tier)."""
+    try:
+        from_email = settings.smtp_from_email or "BugShield <onboarding@resend.dev>"
+        res = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {settings.resend_api_key.strip()}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": from_email,
+                "to": [recipient_email],
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            },
+            timeout=10.0,
+        )
+        if res.status_code in (200, 201):
+            logger.info(f"Verification email dispatched via Resend to {recipient_email}")
+            return True, "Verification email successfully sent via Resend API."
+        err_detail = res.text
+        logger.error(f"Resend API error: {err_detail}")
+        return False, f"Resend API error: {err_detail}"
+    except Exception as exc:
+        logger.error(f"Failed to send email via Resend: {exc}")
+        return False, f"Resend request failed: {exc}"
+
+
+def _send_via_brevo(recipient_email: str, subject: str, html_content: str, text_content: str) -> tuple[bool, str]:
+    """Dispatches email via Brevo HTTPS API (Port 443 - works on Render free tier)."""
+    try:
+        from_email = settings.smtp_from_email or settings.smtp_user or "security@bugshield.io"
+        res = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": settings.brevo_api_key.strip(),
+                "Content-Type": "application/json",
+            },
+            json={
+                "sender": {"name": "BugShield Security", "email": from_email},
+                "to": [{"email": recipient_email}],
+                "subject": subject,
+                "htmlContent": html_content,
+                "textContent": text_content,
+            },
+            timeout=10.0,
+        )
+        if res.status_code in (200, 201):
+            logger.info(f"Verification email dispatched via Brevo to {recipient_email}")
+            return True, "Verification email successfully sent via Brevo API."
+        err_detail = res.text
+        logger.error(f"Brevo API error: {err_detail}")
+        return False, f"Brevo API error: {err_detail}"
+    except Exception as exc:
+        logger.error(f"Failed to send email via Brevo: {exc}")
+        return False, f"Brevo request failed: {exc}"
 
 
 def send_otp_email(recipient_email: str, otp_code: str) -> tuple[bool, str]:
     """
-    Sends a 6-digit OTP code to the recipient email address via SMTP.
+    Sends a 6-digit OTP code to the recipient email address.
+    Supports Resend API (HTTPS), Brevo API (HTTPS), and standard SMTP.
     Returns (success: bool, message: str).
     """
-    if not is_smtp_configured():
+    if not is_email_configured():
         logger.warning(
-            "SMTP is not configured in backend/.env. "
-            "Please configure SMTP_HOST, SMTP_USER, and SMTP_PASSWORD to send real emails."
+            "No email service configured in backend/.env. "
+            "Please configure RESEND_API_KEY, BREVO_API_KEY, or SMTP credentials to send real emails."
         )
-        return False, "SMTP is not configured. Email was not dispatched."
+        return False, "No email service configured. Email was not dispatched."
 
-    from_addr = settings.smtp_from_email or settings.smtp_user
+    from_addr = settings.smtp_from_email or settings.smtp_user or "no-reply@bugshield.io"
     subject = f"BugShield — Your Verification Code: {otp_code}"
 
     # Plain text version
@@ -114,6 +185,15 @@ https://bugshield.io
 </body>
 </html>"""
 
+    # 1. Prefer HTTPS API (Resend) if configured (Port 443 - never blocked by cloud providers)
+    if getattr(settings, "resend_api_key", None):
+        return _send_via_resend(recipient_email, subject, html_content, text_content)
+
+    # 2. Prefer HTTPS API (Brevo) if configured (Port 443 - never blocked by cloud providers)
+    if getattr(settings, "brevo_api_key", None):
+        return _send_via_brevo(recipient_email, subject, html_content, text_content)
+
+    # 3. Standard SMTP fallback (works on local machine or unblocked cloud hosts)
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = f"BugShield Security <{from_addr}>"
@@ -137,6 +217,15 @@ https://bugshield.io
         logger.info(f"Verification email successfully dispatched to {recipient_email}")
         return True, "Verification email successfully sent."
     except Exception as exc:
-        err_msg = f"Failed to send email via SMTP ({settings.smtp_host}:{settings.smtp_port}): {exc}"
-        logger.error(err_msg)
-        return False, err_msg
+        err_msg = str(exc)
+        if "101" in err_msg or "unreachable" in err_msg.lower() or "timeout" in err_msg.lower():
+            detailed_err = (
+                f"Failed to connect to SMTP ({settings.smtp_host}:{settings.smtp_port}): {exc}. "
+                "Cloud platforms like Render free tier block outbound SMTP ports (25, 465, 587). "
+                "Please add RESEND_API_KEY or BREVO_API_KEY in Render Environment Variables to send via HTTPS."
+            )
+        else:
+            detailed_err = f"Failed to send email via SMTP ({settings.smtp_host}:{settings.smtp_port}): {exc}"
+
+        logger.error(detailed_err)
+        return False, detailed_err
