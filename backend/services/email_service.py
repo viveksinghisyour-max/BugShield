@@ -194,13 +194,20 @@ https://bugshield.io
 </body>
 </html>"""
 
-    # 1. Prefer HTTPS API (Resend) if configured (Port 443 - never blocked by cloud providers)
-    if getattr(settings, "resend_api_key", None):
-        return _send_via_resend(recipient_email, subject, html_content, text_content)
-
-    # 2. Prefer HTTPS API (Brevo) if configured (Port 443 - never blocked by cloud providers)
+    # 1. Prefer HTTPS API (Brevo) if configured (Port 443 - works on Render without custom domain)
     if getattr(settings, "brevo_api_key", None):
-        return _send_via_brevo(recipient_email, subject, html_content, text_content)
+        success, msg = _send_via_brevo(recipient_email, subject, html_content, text_content)
+        if success:
+            return True, msg
+        logger.warning(f"Brevo delivery attempt failed: {msg}. Trying next provider...")
+
+    # 2. Try HTTPS API (Resend) if configured (Port 443)
+    if getattr(settings, "resend_api_key", None):
+        success, msg = _send_via_resend(recipient_email, subject, html_content, text_content)
+        if success:
+            return True, msg
+        logger.warning(f"Resend delivery attempt failed: {msg}. Trying next provider...")
+
 
     # 3. Standard SMTP fallback (works on local machine or unblocked cloud hosts)
     msg = MIMEMultipart("alternative")
