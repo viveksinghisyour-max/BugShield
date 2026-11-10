@@ -2,18 +2,9 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    password TEXT DEFAULT 'OTP_AUTH',
+    password TEXT NOT NULL,
     role TEXT NOT NULL CHECK(role IN ('admin', 'developer', 'viewer')),
     created_at TEXT NOT NULL
-);
-
-CREATE TABLE otp_codes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL,
-    code TEXT NOT NULL,
-    expires_at TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    attempts INTEGER DEFAULT 0
 );
 
 CREATE TABLE projects (
@@ -60,4 +51,15 @@ CREATE TABLE reports (
     path TEXT NOT NULL,
     created_at TEXT NOT NULL,
     FOREIGN KEY(scan_id) REFERENCES scans(id)
+);
+
+CREATE TABLE notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    level TEXT NOT NULL,
+    read_at TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
 );

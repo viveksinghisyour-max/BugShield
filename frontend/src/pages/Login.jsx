@@ -1,154 +1,43 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle, Mail, RefreshCw, Shield, KeyRound } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { sendOtp, verifyOtp, user } = useAuth();
+  const { login } = useAuth();
 
-  const [step, setStep] = useState(1); // 1: Email, 2: OTP
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
-  const [devOtp, setDevOtp] = useState("");
-  const [sentViaEmail, setSentViaEmail] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+  const [error, setError] = useState("");
 
-  const inputRefs = useRef([]);
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      navigate("/dashboard");
-    }
-  }, [user, navigate]);
-
-  // Resend timer countdown
-  useEffect(() => {
-    let timer;
-    if (cooldown > 0) {
-      timer = setInterval(() => {
-        setCooldown((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [cooldown]);
-
-  // Step 1: Send OTP
-  const handleSendOtp = async (e) => {
-    e?.preventDefault();
-    setError("");
-    setInfo("");
-
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(email.trim())) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await sendOtp(email.trim());
-      setStep(2);
-      setCooldown(60);
-      if (res.dev_otp) setDevOtp(res.dev_otp);
-      if (res.sent_via_email) setSentViaEmail(true);
-      setInfo(res.message || `Verification code sent to ${email}`);
-      // Focus first OTP input
-      setTimeout(() => inputRefs.current[0]?.focus(), 150);
-    } catch (err) {
-      setError(err.message || "Failed to send verification code.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // OTP Digit Change Handler
-  const handleOtpChange = (index, value) => {
-    // Keep only numbers
-    const cleanValue = value.replace(/[^0-9]/g, "");
-    if (!cleanValue && value !== "") return;
-
-    const newOtp = [...otp];
-    newOtp[index] = cleanValue.slice(-1); // Take last digit
-    setOtp(newOtp);
-
-    // Auto-focus next input
-    if (cleanValue && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  // Keyboard navigation for backspace
-  const handleKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  // Paste handler for full 6-digit code
-  const handlePaste = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, 6);
-    if (pasted.length > 0) {
-      const digits = pasted.split("");
-      const newOtp = ["", "", "", "", "", ""];
-      digits.forEach((d, i) => {
-        if (i < 6) newOtp[i] = d;
-      });
-      setOtp(newOtp);
-      const nextIndex = Math.min(digits.length, 5);
-      inputRefs.current[nextIndex]?.focus();
-    }
-  };
-
-  // Step 2: Verify OTP
-  const handleVerifyOtp = async (e) => {
-    e?.preventDefault();
     setError("");
 
-    const fullCode = otp.join("");
-    if (fullCode.length !== 6) {
-      setError("Please enter all 6 digits of your verification code.");
+    const emailTrimmed = email.trim();
+    if (!emailTrimmed) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    if (!password) {
+      setError("Please enter your password.");
       return;
     }
 
     setLoading(true);
     try {
-      await verifyOtp(email.trim(), fullCode, name.trim());
+      await login(emailTrimmed, password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message || "Invalid or expired verification code.");
+      setError(err.message || "Failed to sign in. Please verify your credentials.");
     } finally {
       setLoading(false);
     }
   };
-
-  // Resend code handler
-  const handleResend = async () => {
-    if (cooldown > 0 || loading) return;
-    setError("");
-    setInfo("");
-    setLoading(true);
-    try {
-      const res = await sendOtp(email.trim());
-      setCooldown(60);
-      setOtp(["", "", "", "", "", ""]);
-      if (res.dev_otp) setDevOtp(res.dev_otp);
-      if (res.sent_via_email) setSentViaEmail(true);
-      setInfo(res.message || "A new 6-digit code has been sent!");
-      inputRefs.current[0]?.focus();
-    } catch (err) {
-      setError(err.message || "Failed to resend verification code.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
 
   return (
     <div className="min-h-screen bg-shield-bg flex">
@@ -159,15 +48,15 @@ export default function Login() {
         <div className="absolute bottom-1/4 left-1/2 w-64 h-64 rounded-full bg-green-500/8 blur-3xl" />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-16">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center glow-blue">
+          <Link to="/" className="inline-flex items-center gap-3 mb-16 group">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center glow-blue transition-transform group-hover:scale-105">
               <Shield size={22} className="text-white" />
             </div>
             <div>
               <p className="text-xl font-black text-white">BugShield</p>
               <p className="text-xs text-slate-500 font-medium tracking-wider">AI SECURITY SCANNER</p>
             </div>
-          </div>
+          </Link>
 
           <h1 className="text-5xl font-black text-white leading-tight max-w-lg">
             Security scanning<br />
@@ -175,12 +64,12 @@ export default function Login() {
             builders.
           </h1>
           <p className="mt-6 text-slate-400 max-w-sm leading-relaxed">
-            Instant passwordless Email OTP sign in. Upload code, detect vulnerabilities, get AI fixes, and export reports safely.
+            Fast, secure JWT-authenticated access. Upload code repositories, detect OWASP vulnerabilities, get AI fixes, and export reports safely.
           </p>
 
           <div className="mt-10 space-y-3">
             {[
-              { label: "Passwordless 6-digit Email OTP Auth", color: "text-blue-400" },
+              { label: "JWT-secured role-based access (RBAC)", color: "text-blue-400" },
               { label: "AI-powered vulnerability detection", color: "text-green-400" },
               { label: "Supports Python, JS, Java & more", color: "text-purple-400" },
               { label: "PDF, JSON & CSV report export", color: "text-cyan-400" },
@@ -202,9 +91,9 @@ export default function Login() {
           </div>
           <div className="font-mono text-xs space-y-1">
             {[
-              { t: "Authenticating via Email OTP…", c: "text-slate-400" },
-              { t: "✓ Code verified successfully", c: "text-green-400" },
-              { t: "✓ User session active", c: "text-blue-400" },
+              { t: "Authenticating JWT session…", c: "text-slate-400" },
+              { t: "✓ Token signature verified", c: "text-green-400" },
+              { t: "✓ User authorized for dashboard", c: "text-blue-400" },
             ].map((l, i) => (
               <div key={i} className="flex gap-2">
                 <span className="text-blue-600">›</span>
@@ -216,194 +105,119 @@ export default function Login() {
       </div>
 
       {/* Right: Auth form */}
-      <div className="flex-none w-full lg:w-[460px] flex items-center justify-center p-6">
+      <div className="flex-none w-full lg:w-[480px] flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
+          {/* Back link */}
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors mb-6"
+          >
+            <ArrowLeft size={14} /> Back to home
+          </Link>
+
           {/* Mobile logo */}
           <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center glow-blue">
               <Shield size={16} className="text-white" />
             </div>
             <span className="font-black text-white">BugShield</span>
           </div>
 
-          {step === 1 ? (
-            /* STEP 1: ENTER EMAIL */
-            <div>
-              <h2 className="text-3xl font-black text-white">Sign In</h2>
-              <p className="mt-2 text-sm text-slate-500">Enter your email to receive a 6-digit OTP</p>
+          <div>
+            <h2 className="text-2xl font-black text-white">Sign In</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Enter your credentials to access your security dashboard.
+            </p>
 
-              <form onSubmit={handleSendOtp} className="mt-8 space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      placeholder="you@example.com"
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-9 pr-4 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-white placeholder-slate-600 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/30 transition-all"
-                    />
-                  </div>
+            {error && (
+              <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-2.5 text-xs text-red-400">
+                <AlertCircle size={15} className="flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
+                  />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="developer@company.com"
+                    autoComplete="email"
+                    required
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#0d1424] border border-white/10 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  />
                 </div>
+              </div>
 
-                {error && (
-                  <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-300 animate-fade-in">
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading || !email}
-                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-sm font-bold text-white transition-all glow-blue flex items-center justify-center gap-2"
-                >
-                  {loading && <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />}
-                  {loading ? "Sending Code…" : "Send Verification Code"}
-                </button>
-
-                <div className="flex items-center justify-center gap-2 pt-2 text-xs text-slate-400">
-                  <KeyRound size={13} className="text-green-400" />
-                  <span>🔒 Passwordless & secure (6-digit OTP)</span>
+              {/* Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
+                  />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
+                    className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-[#0d1424] border border-white/10 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
+              </div>
 
-                <p className="text-center text-sm text-slate-500 pt-4">
-                  New to BugShield?{" "}
-                  <Link to="/register" className="text-blue-400 hover:text-blue-300 font-semibold">
-                    Create account
-                  </Link>
-                </p>
-              </form>
-            </div>
-          ) : (
-            /* STEP 2: VERIFY OTP */
-            <div>
+              {/* Submit button */}
               <button
-                type="button"
-                onClick={() => {
-                  setStep(1);
-                  setError("");
-                  setInfo("");
-                }}
-                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-6"
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-white text-sm transition-all glow-blue disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <ArrowLeft size={14} />
-                Change email
-              </button>
-
-              <h2 className="text-3xl font-black text-white">Verify Code</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                We sent a 6-digit verification code to <br />
-                <span className="font-semibold text-blue-400">{email}</span>
-              </p>
-
-              {info && (
-                <div className="mt-4 px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 flex items-center gap-2">
-                  <CheckCircle size={14} className="text-blue-400 flex-none" />
-                  <span>{info}</span>
-                </div>
-              )}
-
-              {sentViaEmail && (
-                <div className="mt-3 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-center gap-2">
-                  <CheckCircle size={14} className="text-emerald-400 flex-none" />
-                  <span>Real email sent! Check your inbox & spam folder.</span>
-                </div>
-              )}
-
-              {devOtp && (
-                <div className="mt-4 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25 text-xs text-blue-200 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                      <span className="font-bold text-blue-300">Local / Dev Mode</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const digits = devOtp.split("");
-                        const newOtp = ["", "", "", "", "", ""];
-                        digits.forEach((d, i) => { if (i < 6) newOtp[i] = d; });
-                        setOtp(newOtp);
-                        inputRefs.current[5]?.focus();
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-blue-600/40 hover:bg-blue-600/60 text-white font-mono text-[11px] font-bold transition-all border border-blue-400/30 shadow-sm"
-                    >
-                      Autofill OTP ({devOtp})
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    SMTP is not configured in <code className="text-blue-300 font-mono">backend/.env</code>. To receive OTP in your actual inbox, add your Gmail or SMTP credentials.
-                  </p>
-                </div>
-              )}
-
-              <form onSubmit={handleVerifyOtp} className="mt-6 space-y-6">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Enter 6-Digit Code
-                    </label>
-                    <span className="text-[11px] text-amber-400/90 font-mono">Max 3 attempts</span>
-                  </div>
-
-
-                  {/* 6 Digit Inputs */}
-                  <div className="flex gap-2 justify-between" onPaste={handlePaste}>
-                    {otp.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        ref={(el) => (inputRefs.current[idx] = el)}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleOtpChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(idx, e)}
-                        className="w-12 h-13 text-center text-xl font-bold font-mono rounded-xl border border-white/10 bg-white/[0.04] text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-300 animate-fade-in">
-                    {error}
-                  </div>
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Signing in…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In</span>
+                    <ArrowRight size={16} />
+                  </>
                 )}
+              </button>
+            </form>
 
-                <button
-                  type="submit"
-                  disabled={loading || otp.join("").length !== 6}
-                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-sm font-bold text-white transition-all glow-blue flex items-center justify-center gap-2"
-                >
-                  {loading && <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />}
-                  {loading ? "Verifying…" : "Verify Code"}
-                </button>
-
-                {/* Resend OTP Footer */}
-                <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/5">
-                  <span>Didn't receive the code?</span>
-                  {cooldown > 0 ? (
-                    <span className="font-mono text-slate-500">Resend in {cooldown}s</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleResend}
-                      disabled={loading}
-                      className="text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 transition-colors"
-                    >
-                      <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
-                      Resend Code
-                    </button>
-                  )}
-                </div>
-              </form>
+            <div className="mt-6 pt-6 border-t border-white/10 text-center">
+              <p className="text-xs text-slate-500">
+                Don't have an account?{" "}
+                <Link to="/register" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+                  Create one now
+                </Link>
+              </p>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
